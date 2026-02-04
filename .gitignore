@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+
+# LaTeX Artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.gz
+*.fdb_latexmk
+*.fls
+
+# Environments
+env/
+venv/
+.vscode/
+
+# Project Specific
+*.exe
+*.pdf
+!osdag_project/report.pdf
+!osdag_project/My_Report.pdf
+# input_data.xlsx should be kept as sample data

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osdag Engineering Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo">Osdag <span class="highlight">Report Robot</span></div>
+            <div class="subtitle">Advanced Structural Analysis Dashboard</div>
+        </header>
+
+        <div class="dashboard">
+            
+            <!-- INPUT PANEL -->
+            <div class="panel input-panel">
+                <h2>Load Configuration</h2>
+                
+                <div id="loads-container">
+                    <!-- Dynamic Load Items will go here -->
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-secondary" onclick="addPointLoad()">+ Point Load</button>
+                    <button class="btn btn-secondary" onclick="addUDL()">+ UDL</button>
+                </div>
+
+                <button class="btn btn-primary" onclick="analyzeBeam()">Running Analysis...</button>
+            </div>
+
+            <!-- RESULTS PANEL -->
+            <div class="panel results-panel">
+                <div id="welcome-message" class="state-message">
+                    <h3>Ready for Input</h3>
+                    <p>Add loads on the left and click Analyze to visualize the beam.</p>
+                </div>
+
+                <div id="results-content" style="display: none;">
+                    <div class="reactions-box">
+                        <div class="reaction">
+                            <span class="label">Reaction A (Left)</span>
+                            <span class="value" id="val-ra">-- kN</span>
+                        </div>
+                        <div class="reaction">
+                            <span class="label">Reaction B (Right)</span>
+                            <span class="value" id="val-rb">-- kN</span>
+                        </div>
+                    </div>
+
+                    <div class="graph-container">
+                        <img id="sfd-img" src="" alt="Shear Force Diagram">
+                    </div>
+                    
+                    <div class="graph-container">
+                        <img id="bmd-img" src="" alt="Bending Moment Diagram">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
