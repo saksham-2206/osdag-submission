@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from pylatex import Document, Section, Subsection, Command, Figure, TikZ, Axis, Plot
+from pylatex import Document, Section, Subsection, Command, Figure, TikZ, Axis, Plot, Itemize, Description
 from pylatex.utils import NoEscape, bold
 import os
 
@@ -130,6 +130,17 @@ def generate_tikz_coords(x_vals, y_vals):
     coords += f"({x_vals[-1]:.2f},{y_vals[-1]:.2f})"
     return coords
 
+def get_max_values(x_vals, V_vals, M_vals):
+    """Finds absolute maximums and their positions."""
+    idx_v = np.argmax(np.abs(V_vals))
+    idx_m = np.argmax(np.abs(M_vals))
+    return {
+        'v_max': V_vals[idx_v],
+        'v_pos': x_vals[idx_v],
+        'm_max': M_vals[idx_m],
+        'm_pos': x_vals[idx_m]
+    }
+
 def create_report():
     input_file = os.path.join(os.path.dirname(__file__), 'input_data.xlsx')
     image_file = os.path.join(os.path.dirname(__file__), 'beam_setup.png')
@@ -152,55 +163,66 @@ def create_report():
     
     print(f"Beam Length: {L}m")
     ra, rb = calculate_reactions(loads, L)
-    print(f"Reactions: Ra={ra:.2f} kN, Rb={rb:.2f} kN")
-    
     x, V, M = calculate_arrays(loads, ra, L)
+    stats = get_max_values(x, V, M)
     
-    # Create Document with Professional Settings
+    # Create Document
     geometry_options = {"top": "1in", "bottom": "1in", "left": "1in", "right": "1in"}
     doc = Document(geometry_options=geometry_options)
     
-    # Packages for Professional Look
-    doc.preamble.append(NoEscape(r'\usepackage{booktabs}')) # Nice tables
+    # Preamble
+    doc.preamble.append(NoEscape(r'\usepackage{booktabs}'))
     doc.preamble.append(NoEscape(r'\usepackage{pgfplots}'))
     doc.preamble.append(NoEscape(r'\usepgfplotslibrary{fillbetween}'))
     doc.preamble.append(NoEscape(r'\pgfplotsset{compat=1.18}'))
-    doc.preamble.append(NoEscape(r'\usepackage{fancyhdr}')) # Headers
-    doc.preamble.append(NoEscape(r'\usepackage{placeins}')) # Stop floating
-    doc.preamble.append(NoEscape(r'\usepackage{mathpazo}')) # Palatino Font (Professional)
-    doc.preamble.append(NoEscape(r'\usepackage{float}'))    # Force H placement
+    doc.preamble.append(NoEscape(r'\usepackage{fancyhdr}'))
+    doc.preamble.append(NoEscape(r'\usepackage{placeins}'))
+    doc.preamble.append(NoEscape(r'\usepackage{mathpazo}'))
+    doc.preamble.append(NoEscape(r'\usepackage{float}'))
     
-    # Header/Footer Setup
     doc.preamble.append(NoEscape(r'\pagestyle{fancy}'))
     doc.preamble.append(NoEscape(r'\fancyhf{}'))
     doc.preamble.append(NoEscape(r'\rhead{\today}'))
-    doc.preamble.append(NoEscape(r'\lhead{Osdag Structural Analysis}'))
+    doc.preamble.append(NoEscape(r'\lhead{Osdag Structural Analysis - Comprehensive Report}'))
     doc.preamble.append(NoEscape(r'\cfoot{\thepage}'))
     
-    # Title Page
-    doc.preamble.append(Command('title', 'Engineering Report: Simply Supported Beam Analysis'))
-    doc.preamble.append(Command('author', 'Osdag Internship Project'))
+    # Title
+    doc.preamble.append(Command('title', 'Detailed Engineering Report: Simply Supported Beam Analysis'))
+    doc.preamble.append(Command('author', 'Osdag Internship Project - Advanced Module'))
     doc.preamble.append(Command('date', NoEscape(r'\today')))
     doc.append(NoEscape(r'\maketitle'))
-    doc.append(NoEscape(r'\thispagestyle{empty}')) # No header on title page
+    doc.append(NoEscape(r'\thispagestyle{empty}'))
     doc.append(NoEscape(r'\tableofcontents'))
     doc.append(NoEscape(r'\newpage'))
     
-    # Introduction
-    with doc.create(Section('Introduction')):
-        doc.append("This report presents the analysis of a simply supported beam under various loads.")
-        doc.append(" The detailed Shear Force and Bending Moment diagrams are generated programmatically.")
-        
-        with doc.create(Subsection('Beam Setup')):
-            with doc.create(Figure(position='H')) as beam_fig: # 'H' forces it HERE
-                doc.append(NoEscape(r'\centering'))
-                if os.path.exists(image_file):
-                    beam_fig.add_image(image_file, width='350px')
-                    beam_fig.add_caption('Simply Supported Beam Configuration')
-                else:
-                    beam_fig.append(bold("Image not found."))
+    # 1. Executive Summary
+    with doc.create(Section('Executive Summary')):
+        doc.append("This comprehensive report details the structural response of a simply supported beam. ")
+        doc.append("The analysis evaluates reactions at supports and internal force distributions (Shear and Moment) based on the specified loading conditions. ")
+        doc.append(f"The beam has a total span of {L:.2f} meters and is subjected to {len(loads)} distinct loading elements.")
+        doc.append(NoEscape(r'\par\medskip'))
+        doc.append("Key findings include:")
+        with doc.create(Itemize()) as itemize:
+            itemize.add_item(NoEscape(f"Total applied downward force: {sum(l['mag'] if l['type']=='point' else l['mag']*(l['end']-l['start']) for l in loads):.2f} kN"))
+            itemize.add_item(NoEscape(f"Maximum Shear Force: {abs(stats['v_max']):.2f} kN at x = {stats['v_pos']:.2f} m"))
+            itemize.add_item(NoEscape(f"Maximum Bending Moment: {abs(stats['m_max']):.2f} kNm at x = {stats['m_pos']:.2f} m"))
 
-    doc.append(NoEscape(r'\FloatBarrier')) # Finish section before moving on
+    # 2. Methodology
+    with doc.create(Section('Methodology')):
+        doc.append("The analysis is performed using the principles of static equilibrium. ")
+        doc.append("The beam is discretized into 500 segments to ensure high resolution in the resulting diagrams.")
+        
+        with doc.create(Subsection('Global Equilibrium')):
+            doc.append("The support reactions $R_A$ and $R_B$ are calculated by taking moments about support A:")
+            doc.append(NoEscape(r'\[ \sum M_A = 0 \implies R_B \cdot L = \sum (P_i \cdot x_i) + \sum (w_j \cdot L_j \cdot x_{centroid,j}) \]'))
+            doc.append("Once $R_B$ is determined, $R_A$ is found using vertical force balance:")
+            doc.append(NoEscape(r'\[ \sum F_y = 0 \implies R_A = \sum Load_{Total} - R_B \]'))
+
+        with doc.create(Subsection('Internal Forces')):
+            doc.append("At any section $x$, the shear force $V(x)$ and bending moment $M(x)$ are derived as:")
+            doc.append(NoEscape(r'\[ V(x) = R_A - \int_{0}^{x} w(x) \, dx - \sum P_i |_{x_i < x} \]'))
+            doc.append(NoEscape(r'\[ M(x) = R_A \cdot x - \int_{0}^{x} w(x)(x - \xi) \, d\xi - \sum P_i(x - x_i) |_{x_i < x} \]'))
+    
 
     # Input Data
     with doc.create(Section('Input Data')):
@@ -218,70 +240,54 @@ def create_report():
 
     doc.append(NoEscape(r'\FloatBarrier'))
 
-    # Analysis
-    with doc.create(Section('Analysis Results')):
-        doc.append(f"Calculated Reactions:\n")
-        doc.append(f"Ra (Left Support): {ra:.2f} kN\n")
-        doc.append(f"Rb (Right Support): {rb:.2f} kN\n")
+    # 4. Analysis Results
+    with doc.create(Section('Analysis & Visualizations')):
+        doc.append(f"The structural analysis yielded the following support reactions:\n")
+        with doc.create(Description()) as description:
+            description.add_item(NoEscape(r'$R_A$ (Left Support):'), f' {ra:.2f} kN')
+            description.add_item(NoEscape(r'$R_B$ (Right Support):'), f' {rb:.2f} kN')
 
         # SFD
         with doc.create(Subsection('Shear Force Diagram (SFD)')):
-            doc.append("The Shear Force Diagram shows the variation of shear force along the beam.")
+            doc.append(f"The maximum absolute shear force is {abs(stats['v_max']):.2f} kN, occurring at {stats['v_pos']:.2f} m.")
             
             with doc.create(Figure(position='H')) as plot_fig:
                 plot_fig.append(NoEscape(r'\centering'))
                 with plot_fig.create(TikZ()) as tikz:
                     sfd_coords = generate_tikz_coords(x, V)
-                    
-                    # TikZ Axis
-                    axis_options = r"""
-                    width=0.9\textwidth, height=7cm,
-                    axis x line=bottom, axis y line=left,
-                    xlabel={Position (m)}, ylabel={Shear Force (kN)},
-                    grid=major,
-                    enlarge x limits=false,
-                    enlargelimits=0.1
-                    """
-                    
+                    axis_options = r"width=0.9\textwidth, height=6.5cm, axis x line=middle, axis y line=left, xlabel={Position (m)}, ylabel={V (kN)}, grid=major, enlarge x limits=false"
                     tikz.append(NoEscape(r'\begin{axis}[' + axis_options + r']'))
-                    
-                    # Plot Fill
-                    tikz.append(NoEscape(r'\addplot[name path=f, color=blue, thick] coordinates {' + sfd_coords + r'};'))
+                    tikz.append(NoEscape(r'\addplot[name path=f, blue, thick] coordinates {' + sfd_coords + r'};'))
                     tikz.append(NoEscape(r'\path[name path=axis] (axis cs:0,0) -- (axis cs:' + str(L) + r',0);'))
                     tikz.append(NoEscape(r'\addplot[blue!10] fill between[of=f and axis];'))
-                    
                     tikz.append(NoEscape(r'\end{axis}'))
-                plot_fig.add_caption('Shear Force Diagram')
+                plot_fig.add_caption('Shear Force Diagram (SFD)')
 
         # BMD
         with doc.create(Subsection('Bending Moment Diagram (BMD)')):
-            doc.append("The Bending Moment Diagram shows the variation of bending moment along the beam.")
+            doc.append(f"The maximum absolute bending moment (critical section) is {abs(stats['m_max']):.2f} kNm, occurring at {stats['m_pos']:.2f} m.")
             
             with doc.create(Figure(position='H')) as plot_fig:
                 plot_fig.append(NoEscape(r'\centering'))
                 with plot_fig.create(TikZ()) as tikz:
                     bmd_coords = generate_tikz_coords(x, M)
-                    
-                    axis_options = r"""
-                    width=0.9\textwidth, height=7cm,
-                    axis x line=bottom, axis y line=left,
-                    xlabel={Position (m)}, ylabel={Moment (kNm)},
-                    grid=major,
-                    enlarge x limits=false,
-                    enlargelimits=0.1
-                    """
-                    
+                    axis_options = r"width=0.9\textwidth, height=6.5cm, axis x line=middle, axis y line=left, xlabel={Position (m)}, ylabel={M (kNm)}, grid=major, enlarge x limits=false"
                     tikz.append(NoEscape(r'\begin{axis}[' + axis_options + r']'))
-                    
-                    tikz.append(NoEscape(r'\addplot[name path=f, color=red, thick] coordinates {' + bmd_coords + r'};'))
+                    tikz.append(NoEscape(r'\addplot[name path=f, red, thick] coordinates {' + bmd_coords + r'};'))
                     tikz.append(NoEscape(r'\path[name path=axis] (axis cs:0,0) -- (axis cs:' + str(L) + r',0);'))
                     tikz.append(NoEscape(r'\addplot[red!10] fill between[of=f and axis];'))
-                    
                     tikz.append(NoEscape(r'\end{axis}'))
-                plot_fig.add_caption('Bending Moment Diagram')
+                plot_fig.add_caption('Bending Moment Diagram (BMD)')
+
+    # 5. Conclusion
+    with doc.create(Section('Conclusion')):
+        doc.append("The analysis of the simply supported beam has been successfully completed. ")
+        doc.append("The resulting SFD and BMD provide the necessary internal force distributions for further structural design, such as reinforcement calculation or section selection. ")
+        doc.append(f"Special attention should be given to the section at x = {stats['m_pos']:.2f} m, where the bending moment is maximized.")
+        doc.append(NoEscape(r'\par\vfill'))
+        doc.append(NoEscape(r'\begin{center} \textit{End of Engineering Report} \end{center}'))
 
     # Generate PDF
-    # We use clean_tex=False so we can see the .tex file if PDF extraction fails
     try:
         doc.generate_pdf(OUTPUT_FILENAME, clean_tex=False, compiler='pdflatex')
         print(f"PDF generated: {OUTPUT_FILENAME}.pdf")
